@@ -1,0 +1,9 @@
+apiVersion: 1
+providers:
+  - name: so-viec
+    folder: Sổ Việc
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards

@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs: [{ targets: ["localhost:9090"] }]
+
+  - job_name: cadvisor            # CPU, RAM, mạng, đĩa của từng container
+    static_configs: [{ targets: ["cadvisor:8080"] }]
+
+  - job_name: nginx               # số kết nối, số request của Nginx
+    static_configs: [{ targets: ["nginx-exporter:9113"] }]
+
+  - job_name: postgres            # số kết nối, giao dịch, kích thước CSDL
+    static_configs: [{ targets: ["postgres-exporter:9187"] }]
+
+  - job_name: webapp              # số liệu do chính ứng dụng xuất ra tại /metrics
+    metrics_path: /metrics
+    static_configs: [{ targets: ["webapp:3000"] }]
