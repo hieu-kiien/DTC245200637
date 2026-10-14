@@ -1,0 +1,26 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+  log_level: warn
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: label
+            values: ["com.docker.compose.project=dtc245200637"]   # chỉ lấy log của project này
+    relabel_configs:
+      # job = tên service trong docker-compose (nginx, webapp, db, ...), dùng trong câu LogQL {job="nginx"}
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+        target_label: job
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: container

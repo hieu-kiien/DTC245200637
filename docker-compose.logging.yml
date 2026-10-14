@@ -1,0 +1,33 @@
+# Tầng 3 (commit 3): Loki + Promtail, nguồn dữ liệu Loki trong Grafana, cảnh báo bảo mật.
+services:
+  loki:
+    image: grafana/loki:3.1.1
+    restart: unless-stopped
+    command: ["-config.file=/etc/loki/loki-config.yaml"]
+    volumes:
+      - ./logging/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki_data:/loki
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    networks: [mon_net]
+
+  promtail:
+    image: grafana/promtail:3.1.1
+    restart: unless-stopped
+    command: ["-config.file=/etc/promtail/promtail-config.yaml"]
+    volumes:
+      - ./logging/promtail-config.yaml:/etc/promtail/promtail-config.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro     # chỉ đọc, dùng để biết container nào đang chạy và lấy log
+    depends_on: [loki]
+    security_opt: ["no-new-privileges:true"]
+    networks: [mon_net]
+
+  grafana:
+    depends_on: [loki]
+    networks: [mon_net]
+
+  webapp:
+    networks: [mon_net]
+
+volumes:
+  loki_data:

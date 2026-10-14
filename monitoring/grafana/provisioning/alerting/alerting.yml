@@ -1,0 +1,104 @@
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: webapp-hook
+    receivers:
+      - uid: webapp-hook
+        type: webhook
+        settings:
+          url: http://webapp:3000/internal/alert-hook
+          httpMethod: POST
+          authorization_scheme: Bearer
+        secureSettings:
+          authorization_credentials: ${ALERT_WEBHOOK_TOKEN}
+
+policies:
+  - orgId: 1
+    receiver: webapp-hook
+    group_by: ['alertname']
+    group_wait: 0s
+    group_interval: 1m
+    repeat_interval: 2h
+
+groups:
+  - orgId: 1
+    name: bao-mat
+    folder: Cảnh báo Sổ Việc
+    interval: 30s
+    rules:
+      - uid: dang-nhap-sai
+        title: Dò mật khẩu - nhiều lần đăng nhập sai
+        condition: C
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        labels:
+          severity: high
+        annotations:
+          summary: "Có từ 5 lần đăng nhập sai trong 2 phút. Truy vết bằng LogQL: {job=\"webapp\"} | json | event=\"login_failed\""
+        data:
+          - refId: A
+            relativeTimeRange: { from: 120, to: 0 }
+            datasourceUid: loki
+            model:
+              datasource: { type: loki, uid: loki }
+              expr: 'sum(count_over_time({job="webapp"} | json | event="login_failed" [2m]))'
+              queryType: instant
+              editorMode: code
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              type: reduce
+              expression: A
+              reducer: last
+              settings: { mode: replaceNN, replaceWithValue: 0 }
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [4] }
+              refId: C
+
+      - uid: ung-dung-ngung
+        title: Ứng dụng web ngừng phản hồi
+        condition: C
+        for: 1m
+        noDataState: Alerting
+        execErrState: Error
+        labels:
+          severity: critical
+        annotations:
+          summary: Prometheus không cào được số liệu của webapp trong hơn 1 phút.
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              datasource: { type: prometheus, uid: prometheus }
+              expr: 'up{job="webapp"}'
+              instant: true
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { type: lt, params: [1] }
+              refId: C
