@@ -1,0 +1,78 @@
+<%- include('partials/head') %>
+<div class="bar">
+  <h1>Bảng công việc</h1>
+  <div class="tabs" role="tablist" aria-label="Phạm vi">
+    <a class="tab <%= tab === 'all' ? 'on' : '' %>" href="/">Cả nhóm</a>
+    <a class="tab <%= tab === 'mine' ? 'on' : '' %>" href="/?scope=mine">Việc của tôi</a>
+  </div>
+</div>
+
+<details class="card newtask">
+  <summary><%- icon('plus', 16) %> Thêm công việc</summary>
+  <form method="post" action="/tasks" class="grid">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label class="span2">Tên công việc
+      <input name="title" maxlength="140" required>
+    </label>
+    <label class="span2">Mô tả ngắn
+      <textarea name="description" rows="2" maxlength="2000"></textarea>
+    </label>
+    <label>Hạn
+      <input type="date" name="due_date">
+    </label>
+    <label>Mức ưu tiên
+      <select name="priority">
+        <% Object.keys(PRIORITIES).forEach(function (k) { %><option value="<%= k %>" <%= k === 'normal' ? 'selected' : '' %>><%= PRIORITIES[k] %></option><% }) %>
+      </select>
+    </label>
+    <label>Người làm
+      <select name="assignee_id">
+        <option value="">Chưa giao</option>
+        <% users.forEach(function (u) { %><option value="<%= u.id %>"><%= u.full_name %></option><% }) %>
+      </select>
+    </label>
+    <div class="actions"><button class="btn btn-primary" type="submit">Lưu công việc</button></div>
+  </form>
+</details>
+
+<div class="columns">
+<% ['todo','doing','done'].forEach(function (s, idx) { %>
+  <section class="col col-<%= s %>" aria-labelledby="h-<%= s %>">
+    <h2 id="h-<%= s %>"><%= STATUSES[s] %> <span class="count"><%= cols[s].length %></span></h2>
+    <% if (!cols[s].length) { %><p class="empty">Không có việc nào ở cột này.</p><% } %>
+    <% cols[s].forEach(function (t) { %>
+    <article class="task prio-<%= t.priority %> <%= t.overdue ? 'is-overdue' : '' %>">
+      <h3><%= t.title %></h3>
+      <% if (t.description) { %><p class="desc"><%= t.description %></p><% } %>
+      <dl class="meta">
+        <% if (t.due_date) { %>
+        <div><dt class="sr">Hạn</dt><dd class="mono"><%- icon('calendar', 14) %> <%= t.due_date.toISOString().slice(0,10) %><%= t.overdue ? ' · trễ hạn' : '' %></dd></div>
+        <% } %>
+        <div><dt class="sr">Người làm</dt><dd><%= t.assignee_name || 'Chưa giao' %></dd></div>
+        <div><dt class="sr">Ưu tiên</dt><dd><span class="chip chip-<%= t.priority %>"><%= PRIORITIES[t.priority] %></span></dd></div>
+      </dl>
+      <div class="row">
+        <% if (idx > 0) { %>
+        <form method="post" action="/tasks/<%= t.id %>/status">
+          <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="status" value="<%= ['todo','doing','done'][idx-1] %>">
+          <button class="btn btn-sm" type="submit" aria-label="Chuyển sang <%= STATUSES[['todo','doing','done'][idx-1]] %>"><%- icon('left', 16) %></button>
+        </form>
+        <% } %>
+        <% if (idx < 2) { %>
+        <form method="post" action="/tasks/<%= t.id %>/status">
+          <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="status" value="<%= ['todo','doing','done'][idx+1] %>">
+          <button class="btn btn-sm" type="submit" aria-label="Chuyển sang <%= STATUSES[['todo','doing','done'][idx+1]] %>"><%- icon('right', 16) %></button>
+        </form>
+        <% } %>
+        <a class="btn btn-sm" href="/tasks/<%= t.id %>/edit" aria-label="Sửa"><%- icon('pencil', 16) %></a>
+        <form method="post" action="/tasks/<%= t.id %>/delete" data-confirm="Xóa công việc này?">
+          <input type="hidden" name="_csrf" value="<%= csrf %>">
+          <button class="btn btn-sm btn-danger" type="submit" aria-label="Xóa"><%- icon('trash', 16) %></button>
+        </form>
+      </div>
+    </article>
+    <% }) %>
+  </section>
+<% }) %>
+</div>
+<%- include('partials/foot') %>

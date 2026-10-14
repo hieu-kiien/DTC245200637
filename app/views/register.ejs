@@ -1,0 +1,20 @@
+<%- include('partials/head') %>
+<section class="card narrow">
+  <h1>Tạo tài khoản thành viên</h1>
+  <% if (error) { %><p class="alert" role="alert"><%= error %></p><% } %>
+  <form method="post" action="/register" class="stack">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label>Họ tên
+      <input name="full_name" value="<%= form.full_name || '' %>" required autofocus>
+    </label>
+    <label>Tên đăng nhập
+      <input name="username" value="<%= form.username || '' %>" autocomplete="username" required>
+    </label>
+    <label>Mật khẩu (từ 8 ký tự)
+      <input name="password" type="password" minlength="8" autocomplete="new-password" required>
+    </label>
+    <button class="btn btn-primary" type="submit">Tạo tài khoản</button>
+  </form>
+  <p class="muted small"><a href="/login">Quay lại đăng nhập</a></p>
+</section>
+<%- include('partials/foot') %>

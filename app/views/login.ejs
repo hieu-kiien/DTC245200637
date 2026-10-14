@@ -1,0 +1,18 @@
+<%- include('partials/head') %>
+<section class="card narrow">
+  <h1>Đăng nhập vào Sổ Việc</h1>
+  <p class="muted">Bảng chia việc cho nhóm làm bài tập lớn: ai làm gì, hạn ngày nào, đã xong chưa.</p>
+  <% if (error) { %><p class="alert" role="alert"><%= error %></p><% } %>
+  <form method="post" action="/login" class="stack">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label>Tên đăng nhập
+      <input name="username" value="<%= username %>" autocomplete="username" required autofocus>
+    </label>
+    <label>Mật khẩu
+      <input name="password" type="password" autocomplete="current-password" required>
+    </label>
+    <button class="btn btn-primary" type="submit">Đăng nhập</button>
+  </form>
+  <p class="muted small">Chưa có tài khoản? <a href="/register">Tạo tài khoản cho nhóm</a></p>
+</section>
+<%- include('partials/foot') %>

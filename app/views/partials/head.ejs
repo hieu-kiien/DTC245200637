@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> · Sổ Việc</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">Sổ Việc</a>
+  <% if (user) { %>
+  <nav class="topnav" aria-label="Tài khoản">
+    <span class="who"><%= user %></span>
+    <form method="post" action="/logout">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <button class="btn btn-ghost" type="submit"><%- icon('logout', 16) %> Đăng xuất</button>
+    </form>
+  </nav>
+  <% } %>
+</header>
+<main class="page">

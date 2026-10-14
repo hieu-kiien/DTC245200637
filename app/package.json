@@ -1,0 +1,17 @@
+{
+  "name": "so-viec",
+  "version": "1.0.0",
+  "description": "Sổ Việc - quản lý công việc nhóm (Đề 24, môn Triển khai và Quản trị Hệ thống Phần mềm)",
+  "private": true,
+  "main": "src/server.js",
+  "scripts": { "start": "node src/server.js" },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-session": "^2.1.0",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "pg": "^8.12.0",
+    "prom-client": "^15.1.3"
+  }
+}

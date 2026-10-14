@@ -1,0 +1,106 @@
+# Sổ Việc - Đề 24 - DTC245200637
+# Tầng 1 (commit 1): ứng dụng, PostgreSQL, pgAdmin, Nginx.
+# Tầng giám sát và tầng log nằm ở hai file riêng, nối vào bằng biến COMPOSE_FILE trong .env.
+name: dtc245200637
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    user: "70:70"                       # uid của người dùng postgres trong image alpine, không chạy bằng root
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_SUPERUSER}
+      POSTGRES_PASSWORD: ${DB_SUPERPASS}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+      EXPORTER_DB_PASSWORD: ${EXPORTER_DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_SUPERUSER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    networks: [db_net]
+
+  pgadmin:
+    image: dpage/pgadmin4:8.11
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+      PGADMIN_LISTEN_PORT: "5050"
+      PGADMIN_CONFIG_SERVER_MODE: "True"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+      PGADMIN_SERVER_JSON_FILE: /pgadmin4/servers.json
+    ports: ["127.0.0.1:5050:5050"]      # chỉ mở trên máy chủ, không ra mạng ngoài
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./db/pgadmin-servers.json:/pgadmin4/servers.json:ro
+    depends_on:
+      db: { condition: service_healthy }
+    security_opt: ["no-new-privileges:true"]
+    networks: [db_net, mgmt]
+
+  webapp:
+    build: ./app
+    image: dtc245200637/so-viec:1.0
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DB_HOST: db
+      DB_NAME: ${DB_NAME}
+      DB_USER: soviec_app                # tài khoản chỉ có quyền đọc/ghi dữ liệu
+      DB_PASSWORD: ${APP_DB_PASSWORD}
+      SESSION_SECRET: ${SESSION_SECRET}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ALERT_WEBHOOK_TOKEN: ${ALERT_WEBHOOK_TOKEN}
+    depends_on:
+      db: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 256m
+    pids_limit: 128
+    networks: [app_net, db_net]
+
+  nginx:
+    image: nginxinc/nginx-unprivileged:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:8080"
+      - "443:8443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      webapp: { condition: service_healthy }
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 128m
+    pids_limit: 64
+    networks: [app_net]
+
+networks:
+  app_net:                # Nginx và ứng dụng
+  db_net:                 # Cơ sở dữ liệu. internal: true nên không có đường ra Internet và không publish được cổng
+    internal: true
+  mgmt:                   # Cổng quản trị chỉ bind vào 127.0.0.1
+
+volumes:
+  pgdata:
+  pgadmin_data:

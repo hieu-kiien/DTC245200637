@@ -1,0 +1,13 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Sổ Việc (PostgreSQL)",
+      "Group": "Servers",
+      "Host": "db",
+      "Port": 5432,
+      "MaintenanceDB": "soviec",
+      "Username": "dba",
+      "SSLMode": "prefer"
+    }
+  }
+}

@@ -1,0 +1,37 @@
+<%- include('partials/head') %>
+<section class="card">
+  <h1>Sửa công việc</h1>
+  <form method="post" action="/tasks/<%= task.id %>" class="grid">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label class="span2">Tên công việc
+      <input name="title" maxlength="140" value="<%= task.title %>" required>
+    </label>
+    <label class="span2">Mô tả ngắn
+      <textarea name="description" rows="3" maxlength="2000"><%= task.description %></textarea>
+    </label>
+    <label>Hạn
+      <input type="date" name="due_date" value="<%= task.due_date ? task.due_date.toISOString().slice(0,10) : '' %>">
+    </label>
+    <label>Trạng thái
+      <select name="status">
+        <% Object.keys(STATUSES).forEach(function (k) { %><option value="<%= k %>" <%= k === task.status ? 'selected' : '' %>><%= STATUSES[k] %></option><% }) %>
+      </select>
+    </label>
+    <label>Mức ưu tiên
+      <select name="priority">
+        <% Object.keys(PRIORITIES).forEach(function (k) { %><option value="<%= k %>" <%= k === task.priority ? 'selected' : '' %>><%= PRIORITIES[k] %></option><% }) %>
+      </select>
+    </label>
+    <label>Người làm
+      <select name="assignee_id">
+        <option value="">Chưa giao</option>
+        <% users.forEach(function (u) { %><option value="<%= u.id %>" <%= u.id === task.assignee_id ? 'selected' : '' %>><%= u.full_name %></option><% }) %>
+      </select>
+    </label>
+    <div class="actions">
+      <button class="btn btn-primary" type="submit">Lưu thay đổi</button>
+      <a class="btn" href="/">Hủy</a>
+    </div>
+  </form>
+</section>
+<%- include('partials/foot') %>
